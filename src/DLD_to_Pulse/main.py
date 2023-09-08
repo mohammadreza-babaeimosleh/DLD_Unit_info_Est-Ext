@@ -54,7 +54,7 @@ def Pulse_data_extractor(
         (Pulse_transactions_df["building_name_en"].str.lower() == building_name.lower())
         & (Pulse_transactions_df["area_name_en"].str.lower() == area_name.lower())
         & (Pulse_transactions_df["rooms_en"].str.lower() == no_bedrooms.lower())
-        & (Pulse_transactions_df["procedure_area"] == square_footage)
+        # & (Pulse_transactions_df["procedure_area"] == square_footage)
         & (Pulse_transactions_df["instance_date"] > passed_month)
     ]
 
