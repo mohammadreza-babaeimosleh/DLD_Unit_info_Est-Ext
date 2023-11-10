@@ -10,7 +10,12 @@ from datetime import date, datetime, timedelta
 import re
 
 # List of needed Datasets
-df_list = ["Transactions.csv", "transactions-2023.csv", "Units.csv"]
+df_list = [
+    "Transactions.csv",
+    "transactions-2023-09-05.csv",
+    "Units.csv",
+    "Rent_Contracts",
+]
 
 
 # Load data
@@ -40,27 +45,40 @@ def Unit_parking_edittor(entry):
     return entry
 
 
+def Rent_room_edittor(entry):
+    if "+" in entry:
+        entry = entry.split(" ")[0] + " B/R"
+    return entry
+
+
 # Extracting data from Pulse dataset
-def Pulse_data_extractor(
+def Rent_data_extractor(
     building_name, area_name, no_bedrooms, square_footage, floor, valid_passed_month=12
 ):
-    passed_month = datetime.now() - timedelta(days=valid_passed_month * 30)
-
-    Pulse_transactions_df["instance_date"] = pd.to_datetime(
-        Pulse_transactions_df["instance_date"]
+    Rent_df = Rent_df.rename(
+        columns={
+            "ejari_property_sub_type_en": "rooms_en",
+            "actual_area": "procedure_area",
+            "contract_start_date": "instance_date",
+            "annual_amount": "actual_worth",
+        }
     )
 
-    return_df = Pulse_transactions_df[
-        (Pulse_transactions_df["building_name_en"].str.lower() == building_name.lower())
-        & (Pulse_transactions_df["area_name_en"].str.lower() == area_name.lower())
-        & (Pulse_transactions_df["rooms_en"].str.lower() == no_bedrooms.lower())
-        & (Pulse_transactions_df["procedure_area"] == square_footage)
-        & (Pulse_transactions_df["instance_date"] > passed_month)
+    passed_month = datetime.now() - timedelta(days=valid_passed_month * 30)
+
+    Rent_df["instance_date"] = pd.to_datetime(Rent_df["instance_date"])
+
+    Rent_df["rooms_en"] = Rent_room_edittor(Rent_df)
+
+    return_df = Rent_df[
+        # (Rent_df["building_name_en"].str.lower() == building_name.lower())
+        (Rent_df["area_name_en"].str.lower() == area_name.lower())
+        & (Rent_df["rooms_en"].str.lower() == no_bedrooms.lower())
+        # & (Pulse_transactions_df["procedure_area"] == square_footage)
+        & (Rent_df["instance_date"] > passed_month)
     ]
 
     return_df["instance_date"] = return_df["instance_date"].dt.date
-
-    return_df.to_excel("test_Sky.xlsx", index=False)
 
     return return_df
 
@@ -127,7 +145,7 @@ def data_extractor(
 ):
     logger.info("Extracting info from Pulse_dataset...")
 
-    final_data = Pulse_data_extractor(
+    final_data = Rent_data_extractor(
         building_name=building_name,
         area_name=area_name,
         no_bedrooms=no_bedrooms,
@@ -252,7 +270,6 @@ def data_call(
 def Unit_price_estimator(search_results):
     num_data = 0
     value_sum = 0
-    actual_area = 0
     for res in search_results:
         if res.empty:
             continue
@@ -263,50 +280,53 @@ def Unit_price_estimator(search_results):
         if df.empty:
             continue
         actual_area = df["actual_area"].sum()
-
-    try:
-        actual_area = actual_area / num_data
-        return_value_per_meter = value_sum / num_data
-        return_value = round(actual_area * return_value_per_meter, 2)
-    except:
-        return_value = "price not found"
+    actual_area = actual_area / num_data
+    return_value_per_meter = value_sum / num_data
+    return_value = round(actual_area * return_value_per_meter, 2)
 
     logger.warning(f"{num_data} Records was founded")
 
     return return_value
 
 
-logger.info("Loading Pulse_transactions dataset...")
+logger.info("Loading Rent_Contracts dataset...")
 
 # Loading Pulse data
-Pulse_transactions_df = batch_data_loader(
-    df_list[0],
+Rent_df = batch_data_loader(
+    df_list[3],
 )
 # Needed columns of Pulse data
-Pulse_df_features = [
-    "transaction_id",
-    "instance_date",
-    "area_name_en",
-    "building_name_en",
+Rent_df_features = [
+    "contract_id",
+    "contract_reg_type_id",
+    "contract_reg_type_en",
+    "contract_start_date",
+    "contract_end_date",
+    "annual_amount",
+    "is_free_hold",
+    "ejari_bus_property_type_en",
+    "ejari_property_type_en",
+    "ejari_property_sub_type_id",
+    "ejari_property_sub_type_en",
+    "property_usage_en",
+    "project_number",
     "project_name_en",
     "master_project_en",
+    "area_id",
+    "area_name_en",
+    "actual_area",
     "nearest_landmark_en",
     "nearest_metro_en",
     "nearest_mall_en",
-    "rooms_en",
-    "has_parking",
-    "procedure_area",
-    "actual_worth",
-    "meter_sale_price",
+    "tenant_type_id",
+    "tenant_type_en",
 ]
 
 # Excluding unwanted columns
-Pulse_df_droplist = [
-    x for x in Pulse_transactions_df.columns.tolist() if (x not in Pulse_df_features)
-]
-# Pulse_transactions_df = Pulse_transactions_df.drop(Pulse_df_droplist, axis=1)
+Rent_df_droplist = [x for x in Rent_df.columns.tolist() if (x not in Rent_df)]
+Rent_df = Rent_df.drop(Rent_df_droplist, axis=1)
 
-logger.info("Pulse_transactions dataset loaded successfully!!!")
+logger.info("Rent_Contarct dataset loaded successfully!!!")
 
 logger.info("Loading DLD_transactions dataset...")
 # Loading DLD data
@@ -356,11 +376,6 @@ Units_df_droplist = [
 Units_df = Units_df.drop(Units_df_droplist, axis=1)
 
 logger.info("Units dataset loaded successfully!!!")
-
-# Preproceccing needed to start scanning data
-Pulse_transactions_df["transaction_id"] = Pulse_transactions_df["transaction_id"].apply(
-    Pulse_id_edittor
-)
 
 DLD_transactions_df["Transaction Date"] = DLD_Date_edittor(DLD_transactions_df)
 
