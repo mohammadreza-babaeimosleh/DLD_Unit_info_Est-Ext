@@ -18,6 +18,7 @@ client = MongoClient("mongodb://localhost:27017/")
 # Access the desired database and collection
 db = client["PropertyGPT"]
 
+# loading databases
 Transactions_collection = db["Transactions"]
 Units_collection = db["Units"]
 DLD_transaction_collection = db["transactions-2023"]
@@ -44,6 +45,7 @@ def Pulse_data_extractor(
             ]
         },
     }
+
     return_cursor = Transactions_collection.find(query)
     # Convert the cursor to a list of dictionaries
     return_data = list(return_cursor)
@@ -60,8 +62,8 @@ def DLD_parking_extractor(results, DLD_transactions_collection):
         results[0]["instance_date"]
     ).dt.strftime("%Y-%m-%d")
 
+    # mongodb querry
     data_list = results[0].to_dict(orient="records")
-    # [["rooms_en", "procedure_area", "actual_worth", "instance_date"]]
     result_list = []
     for data in data_list:
         filter_conditions = {
@@ -141,8 +143,6 @@ def data_extractor(
     )
     results.append(results1)
 
-    # print(results[0])
-
     logger.info(f"{results[0].shape[0]} Records found in Pulse_dataset")
 
     logger.info("Features extracted from Pulse_dataset!!!")
@@ -152,8 +152,6 @@ def data_extractor(
 
         results2 = DLD_parking_extractor(results, DLD_transaction_collection)
         results.append(results2)
-
-        # print(results[1])
 
         logger.info(f"{results[1].shape[0]} Records found in DLD_dataset")
 
@@ -166,8 +164,6 @@ def data_extractor(
             results.append(results3)
 
             if len(results[2]) != 0:
-                # print(results[2][["area_name_en", "floor"]])
-
                 logger.info(f"{results[2].shape[0]} Records found in Units_dataset")
 
                 logger.info("Features extracted from Units_dataset!!!")
@@ -252,22 +248,22 @@ def data_call(
     else:
         floors_to_search.append(floor)
 
-    # try:
-    search_results = []
-    for num in rooms_to_search:
-        for fl in floors_to_search:
-            logger.warning(f"Searching for building with {num} on floor: {fl}")
-            res = data_extractor(
-                building_name=building_name,
-                area_name=area_name,
-                no_bedrooms=num,
-                square_footage=square_footage,
-                floor=fl,
-                valid_passed_month=valid_passed_month,
-            )
-            search_results.append(res)
-    # except:
-    #     logger.error("There was an error searching in dataframes for your data")
+    try:
+        search_results = []
+        for num in rooms_to_search:
+            for fl in floors_to_search:
+                logger.warning(f"Searching for building with {num} on floor: {fl}")
+                res = data_extractor(
+                    building_name=building_name,
+                    area_name=area_name,
+                    no_bedrooms=num,
+                    square_footage=square_footage,
+                    floor=fl,
+                    valid_passed_month=valid_passed_month,
+                )
+                search_results.append(res)
+    except:
+        logger.error("There was an error searching in dataframes for your data")
 
     return search_results
 
@@ -326,4 +322,3 @@ if __name__ == "__main__":
     )
 
     print(Unit_price_estimator(results))
-    # print(results[2])

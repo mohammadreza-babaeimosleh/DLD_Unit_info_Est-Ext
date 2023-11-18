@@ -20,6 +20,8 @@ Transactions_collection = db["Transactions"]
 Units_collection = db["Units"]
 DLD_transaction_collection = db["transactions-2023"]
 
+# Columns which you want to exclude from each dataset file
+
 Unit_exclude = [
     "property_id",
     "area_id",
@@ -76,6 +78,7 @@ list_of_collections = [
 ]
 
 
+# Function to preprocess data before adding to data base
 def convert_to_correct_type(key, value):
     if key == "instance_date" or key == "Transaction Date":
         try:
@@ -92,9 +95,6 @@ def convert_to_correct_type(key, value):
 
             return f"{year}-{month}-{day}"
         except ValueError:
-            # print("error")
-            # print(type(value))
-            # print(value)
             return value
     elif key == "Amount":
         return float(value)
@@ -110,12 +110,15 @@ def convert_to_correct_type(key, value):
 for n in range(len(list_of_collections)):
     logger.info(f"Adding {collections_path[n]} to Mongo Database ...")
 
-    if (
-        collections_path[n] == "Transactions.csv"
-        or collections_path[n] == "transactions-2023.csv"
-    ):
-        logger.info("Passed")
-        continue
+    # if you want to exclude a .csv file from being added to database, uncomment code below
+
+    # if (
+    #     collections_path[n] == "Transactions.csv"
+    #     or collections_path[n] == "transactions-2023.csv"
+    # ):
+    #     logger.info("Passed")
+    #     continue
+
     with open(DATA_DIR / collections_path[n], "r") as file:
         reader = csv.reader(file)
         header = next(reader)  # Read the header row
@@ -127,6 +130,7 @@ for n in range(len(list_of_collections)):
             j for j, col in enumerate(header) if col not in excluded_columns[n]
         ]
 
+        # with the increase of batch number you can boost spead of adding the data but it will lead to more data loss in case of an error in our data
         batch_size = 1  # Number of documents to insert at once
         batch = []  # Batch of documents
 

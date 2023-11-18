@@ -14,11 +14,11 @@ To use the code below without any security issues run simply these instructions:
 ```
 2. Download [Pulse Transactions](https://www.dubaipulse.gov.ae/data/dld-transactions/dld_transactions-open), [Units](https://www.dubaipulse.gov.ae/data/dld-registration/dld_units-open), [DLD Transactions](https://dubailand.gov.ae/en/open-data/real-estate-data/#/) datasets and place it in **Data** folder in ./src path 
 
-*note-1*: do not rename the dataset file 
+*note-1*: do not rename the dataset file (except for DLD transaction dataset)
 
 *note-2*: you need to edit your code based on the name of your downloaded[DLD Transactions](https://dubailand.gov.ae/en/open-data/real-estate-data/#/) dataet
 
-3. Datasets provided by DLD may have some structural issues. To solve them run the code provided in the csv_edit folder by using the below command (optional and may need code editting)
+3. (optinal) Datasets provided by DLD may have some structural issues. To solve them run the code provided in the csv_edit folder by using the below command (optional and may need code editting)
 ```bash
     python ./src/csv_edit/main.py
 ```
@@ -28,5 +28,7 @@ To use the code below without any security issues run simply these instructions:
     python python ./src/DLD_to_Pulse/main.py
 ```
 5. After some logs of processing code requests for entry. Provide code with valid data in mentioned format
+
+6. In each directory you can see both the pandas code and mongodb codes for that task. in Transaction_price directory, you can see a code named **main_mongo_dataAdd** this code will able you to add your .csv dataset to the mongodb database
 
 the output of code would the price of your desired unit
